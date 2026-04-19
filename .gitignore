@@ -1,5 +1,6 @@
 node_modules/
 .next/
 .env
-# Ignore Firebase service account credentials
+# Ignore Firebase service account credentials (never commit real keys)
 firebaseServiceAccount.json
+Backend/firebaseServiceAccount.json
