@@ -119,6 +119,12 @@ Traditional care often reacts after something goes wrong. NoRog helps you **moni
 
 ---
 
+## Hosting (Vercel)
+
+Deploy the API and the React app as **two Vercel projects** (root directories `Backend` and `Frontend/frontend`), with env vars for Groq, Firebase, and `VITE_API_BASE_URL`. Full steps, variable list, and caveats (timeouts, uploads) are in **[DEPLOY.md](./DEPLOY.md)**.
+
+---
+
 ## Repository layout
 
 ```

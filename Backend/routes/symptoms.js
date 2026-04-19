@@ -1,7 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
 import { callGroq } from "../services/groqService.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
@@ -10,9 +8,9 @@ import {
   updateSymptomLog,
   getProfile
 } from "../services/firebaseDB.js";
+import { getUploadsDir } from "../uploadPaths.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = path.join(__dirname, "..", "uploads");
+const uploadDir = getUploadsDir();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),

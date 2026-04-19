@@ -1,7 +1,8 @@
 import axios from "axios";
 
+/** Production: set VITE_API_BASE_URL in Vercel (e.g. https://your-api.vercel.app/api) */
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   headers: { "Content-Type": "application/json" },
   timeout: 30000
 });
