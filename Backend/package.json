@@ -4,8 +4,9 @@
   "description": "NoRog — Proactive Disease Monitoring System Backend",
   "type": "module",
   "main": "index.js",
+  "packageManager": "npm@10.8.2",
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   },
   "scripts": {
     "start": "node index.js",
