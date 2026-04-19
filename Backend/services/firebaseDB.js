@@ -1,4 +1,4 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import fs from 'fs';
 import path from 'path';
@@ -7,30 +7,73 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serviceAccountPath = path.join(__dirname, '..', 'firebaseServiceAccount.json');
 
+function normalizeServiceAccount(sa) {
+  if (!sa || typeof sa !== 'object') return null;
+  if (typeof sa.private_key === 'string') {
+    sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+  }
+  return sa;
+}
+
+function parseServiceAccountFromEnv(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  const value = raw.trim();
+  if (!value) return null;
+
+  // Primary expected format: raw JSON string in FIREBASE_SERVICE_ACCOUNT
+  try {
+    if (value.startsWith('{')) {
+      return normalizeServiceAccount(JSON.parse(value));
+    }
+  } catch {
+    // Try base64 fallback below
+  }
+
+  // Optional fallback: base64-encoded JSON
+  try {
+    const decoded = Buffer.from(value, 'base64').toString('utf8');
+    if (decoded && decoded.trim().startsWith('{')) {
+      return normalizeServiceAccount(JSON.parse(decoded));
+    }
+  } catch {
+    // Final error thrown by caller with setup hint
+  }
+
+  throw new Error(
+    'Invalid FIREBASE_SERVICE_ACCOUNT. Provide minified JSON string or base64-encoded JSON.'
+  );
+}
+
 let db = null;
 try {
   let serviceAccount = null;
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    serviceAccount = parseServiceAccountFromEnv(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    serviceAccount = parseServiceAccountFromEnv(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64);
   } else if (fs.existsSync(serviceAccountPath)) {
-    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    serviceAccount = normalizeServiceAccount(JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8')));
   }
   if (serviceAccount) {
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
+    }
     db = getFirestore();
-    console.log("Firebase initialized successfully");
+    console.log('Firebase initialized successfully');
   } else {
-    console.warn("WARNING: Firebase not configured. Set FIREBASE_SERVICE_ACCOUNT or add firebaseServiceAccount.json.");
+    console.warn('WARNING: Firebase not configured. Set FIREBASE_SERVICE_ACCOUNT or add firebaseServiceAccount.json.');
   }
 } catch (error) {
-  console.error("Error initializing Firebase:", error);
+  console.error('Error initializing Firebase:', error.message || error);
 }
 
 // Helper to handle the case where DB is not initialized yet
 const checkDB = () => {
-  if (!db) throw new Error("Firebase DB not initialized. Missing service account JSON.");
+  if (!db) {
+    throw new Error('Firebase DB not initialized. Check FIREBASE_SERVICE_ACCOUNT in deployment environment.');
+  }
   return db;
 };
 
